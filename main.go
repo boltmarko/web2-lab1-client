@@ -44,7 +44,7 @@ type HomeData struct {
 
 func createHomeHandler(token string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		apiURL := os.Getenv("RENDER_EXTERNAL_URL")
+		apiURL := os.Getenv("API_URL")
 		if apiURL == "" {
 			apiURL = "http://localhost:8080"
 		}
@@ -103,7 +103,7 @@ func createTicketHandler(token string, auth *Authenticator) http.HandlerFunc {
 			return
 		}
 
-		apiURL := os.Getenv("RENDER_EXTERNAL_URL")
+		apiURL := os.Getenv("API_URL")
 		if apiURL == "" {
 			apiURL = "http://localhost:8080"
 		}
