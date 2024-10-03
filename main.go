@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -183,7 +182,6 @@ func createCallbackHandler(a *Authenticator) http.HandlerFunc {
 			return
 		}
 
-		fmt.Println(oauth2Token.AccessToken)
 		http.SetCookie(w, &http.Cookie{
 			Name:    "token",
 			Value:   oauth2Token.AccessToken,
@@ -251,10 +249,17 @@ func getAuthCredentials() AuthCredentials {
 	clientID := os.Getenv("OIDC_CLIENT_ID")
 	clientSecret := os.Getenv("OIDC_CLIENT_SECRET")
 	audience := os.Getenv("OIDC_AUDIENCE")
-	redirectURL := os.Getenv("OIDC_REDIRECT_URI")
-	if authURL == "" || clientSecret == "" || clientID == "" || redirectURL == "" {
+
+	externalURL := os.Getenv("RENDER_EXTERNAL_URL")
+	if externalURL == "" {
+		externalURL = "http://localhost:8081"
+	}
+
+	if authURL == "" || clientSecret == "" || clientID == "" {
 		log.Fatal("OIDC_CLIENT_SECRET, OIDC_CLIENT_ID and OIDC_REDIRECT_URI are required")
 	}
+
+	redirectURL := externalURL + "/callback"
 
 	return AuthCredentials{
 		ClientID:     clientID,
