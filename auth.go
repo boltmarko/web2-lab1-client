@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"net/url"
 	"time"
@@ -14,14 +13,12 @@ import (
 	"golang.org/x/oauth2"
 )
 
-// Authenticator is used to authenticate our users.
 type Authenticator struct {
 	*oidc.Provider
 	oauth2.Config
-	ac *AuthCredentials
+	AuthCredentials
 }
 
-// New instantiates the *Authenticator.
 func NewAuthenticator(ac *AuthCredentials) (*Authenticator, error) {
 	provider, err := oidc.NewProvider(
 		context.Background(),
@@ -40,13 +37,12 @@ func NewAuthenticator(ac *AuthCredentials) (*Authenticator, error) {
 	}
 
 	return &Authenticator{
-		Provider: provider,
-		Config:   conf,
-		ac:       ac,
+		Provider:        provider,
+		Config:          conf,
+		AuthCredentials: *ac,
 	}, nil
 }
 
-// VerifyIDToken verifies that an *oauth2.Token is a valid *oidc.IDToken.
 func (a *Authenticator) VerifyIDToken(ctx context.Context, token *oauth2.Token) (*oidc.IDToken, error) {
 	rawIDToken, ok := token.Extra("id_token").(string)
 	if !ok {
@@ -60,16 +56,8 @@ func (a *Authenticator) VerifyIDToken(ctx context.Context, token *oauth2.Token) 
 	return a.Verifier(oidcConfig).Verify(ctx, rawIDToken)
 }
 
-type CustomClaims struct {
-	Scope string `json:"scope"`
-}
-
-func (c *CustomClaims) Validate(ctx context.Context) error {
-	return nil
-}
-
-func (a *Authenticator) CheckAuth(token string) (bool, error) {
-	url, err := url.Parse(a.ac.URL)
+func (auth *Authenticator) CheckAuth(token string) (bool, error) {
+	url, err := url.Parse(auth.URL)
 	if err != nil {
 		log.Fatalf("Failed to parse the URL: %v", err)
 	}
@@ -79,20 +67,14 @@ func (a *Authenticator) CheckAuth(token string) (bool, error) {
 	jwtValidator, err := validator.New(
 		provider.KeyFunc,
 		validator.RS256,
-		a.ac.URL,
-		[]string{a.ac.Audience},
-		validator.WithCustomClaims(
-			func() validator.CustomClaims {
-				return &CustomClaims{}
-			},
-		),
+		auth.URL,
+		[]string{auth.Audience},
 	)
 
 	if err != nil {
 		log.Fatalf("Failed to create the jwt validator: %v", err)
 	}
 
-	fmt.Println("Token: ", token)
 	_, err = jwtValidator.ValidateToken(context.Background(), token)
 	if err != nil {
 		return false, err
